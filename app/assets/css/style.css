@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-50 min-h-screen font-sans;
+  }
+}
+
+.glass {
+  @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl;
+}
+
+.premium-gradient {
+  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
+              radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.15), transparent);
+}
