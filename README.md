@@ -94,5 +94,5 @@ service cloud.firestore {
 ---
 
 ## 👤 Author
-**Alvin Raditya**
+**Someone**
 - GitHub: [@jipanjiji](https://github.com/jipanjiji)

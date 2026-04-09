@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global helper: Is the user Alvin?
+    function isAlvin() {
+      return request.auth != null && 
+             request.auth.token.email == "YOUR_EMAIL_HERE";
+    }
+
+    // 1. Username Mapping
+    match /usernames/{username} {
+      // Single get allowed for anyone for login lookup
+      allow get: if true;
+      allow list: if false;
+      
+      // Only Alvin can manage usernames (registration/updates)
+      allow create, update, delete: if isAlvin() && request.resource.data.uid == request.auth.uid;
+    }
+    
+    // 2. Vault Items
+    match /items/{itemId} {
+      // Only Alvin has full access to his documents
+      allow read, write: if isAlvin() && resource.data.userId == request.auth.uid;
+      allow create: if isAlvin() && request.resource.data.userId == request.auth.uid;
+      
+      // PUBLIC VIEW (Raw view)
+      // Allowed if public, matches type, AND is not a password
+      // Anyone can read these even without login
+      allow read: if resource.data.is_public == true && 
+                    (resource.data.type == 'plain_text' || resource.data.type == 'code') &&
+                    resource.data.type != 'password';
+    }
+  }
+}
