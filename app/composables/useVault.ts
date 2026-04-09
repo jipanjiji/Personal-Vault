@@ -19,7 +19,7 @@ export interface VaultItem {
   id?: string;
   userId: string;
   title: string;
-  type: 'plain_text' | 'code' | 'password';
+  type: 'plain_text' | 'code' | 'password' | 'account' | 'email';
   content: string;
   language?: string;
   is_public: boolean;
@@ -31,6 +31,9 @@ export const useVault = () => {
   const { user } = useAuth();
   const items = ref<VaultItem[]>([]);
   const loading = ref(true);
+
+  // Helper to determine if a type should be encrypted
+  const isSecretType = (type: string) => ['password', 'account', 'email'].includes(type);
 
   const refresh = async () => {
     if (!user.value) return;
@@ -60,7 +63,7 @@ export const useVault = () => {
     if (!user.value) return;
     
     let finalContent = item.content;
-    if (item.type === 'password') {
+    if (isSecretType(item.type)) {
       finalContent = encryptContent(item.content, user.value.uid);
     }
 
@@ -80,7 +83,7 @@ export const useVault = () => {
     if (!user.value) return;
     
     let finalContent = item.content;
-    if (item.type === 'password' && item.content) { 
+    if (item.type && isSecretType(item.type) && item.content) { 
       finalContent = encryptContent(item.content, user.value.uid);
     }
 

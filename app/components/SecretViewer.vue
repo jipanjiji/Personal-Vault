@@ -5,12 +5,19 @@
         <div class="relative w-full max-w-lg glass border border-white/10 rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in duration-300">
           <div class="flex items-center justify-between mb-8">
             <div class="flex items-center gap-4">
-              <div class="p-4 bg-indigo-600 rounded-3xl shadow-lg shadow-indigo-600/20">
-                <ShieldCheckIcon class="w-6 h-6 text-white" />
+              <div :class="[
+                'p-4 rounded-3xl shadow-lg',
+                item?.type === 'account' ? 'bg-emerald-600 shadow-emerald-600/20' :
+                item?.type === 'email' ? 'bg-indigo-600 shadow-indigo-600/20' :
+                'bg-amber-600 shadow-amber-600/20'
+              ]">
+                <UserIcon v-if="item?.type === 'account'" class="w-6 h-6 text-white" />
+                <MailIcon v-else-if="item?.type === 'email'" class="w-6 h-6 text-white" />
+                <LockIcon v-else class="w-6 h-6 text-white" />
               </div>
               <div>
                 <h2 class="text-xl font-bold text-white">{{ item?.title || 'Secret Details' }}</h2>
-                <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">Encrypted Vault</span>
+                <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">Secure Vault</span>
               </div>
             </div>
             <button @click="close" class="p-3 hover:bg-white/5 rounded-2xl transition-all text-slate-400 hover:text-white">
@@ -20,7 +27,7 @@
 
           <div class="space-y-6">
             <!-- Email Field -->
-            <div class="group relative bg-[#0a0f1d] border border-white/5 rounded-3xl p-6 transition-all hover:border-indigo-500/30">
+            <div v-if="showEmailField" class="group relative bg-[#0a0f1d] border border-white/5 rounded-3xl p-6 transition-all hover:border-indigo-500/30">
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Email / Username</label>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-lg font-medium text-slate-200 truncate">{{ secretData.email || 'N/A' }}</span>
@@ -34,8 +41,8 @@
             </div>
 
             <!-- Password Field -->
-            <div class="group relative bg-[#0a0f1d] border border-white/5 rounded-3xl p-6 transition-all hover:border-indigo-500/30">
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Security Key</label>
+            <div v-if="showPasswordField" class="group relative bg-[#0a0f1d] border border-white/5 rounded-3xl p-6 transition-all hover:border-indigo-500/30">
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Password</label>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-lg font-mono font-bold tracking-tight text-white transition-all duration-300">
                   {{ showPassword ? secretData.password : '••••••••••••' }}
@@ -59,7 +66,7 @@
             </div>
 
             <!-- Notes Field -->
-            <div v-if="secretData.notes" class="bg-[#0a0f1d] border border-white/5 rounded-3xl p-6">
+            <div v-if="showNotesField && secretData.notes" class="bg-[#0a0f1d] border border-white/5 rounded-3xl p-6">
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Private Notes</label>
               <p class="text-sm text-slate-400 leading-relaxed max-h-32 overflow-y-auto custom-scrollbar">
                 {{ secretData.notes }}
@@ -97,7 +104,10 @@ import {
   EyeIcon, 
   EyeOffIcon, 
   Edit2Icon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  UserIcon,
+  MailIcon,
+  LockIcon
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -109,6 +119,10 @@ const emit = defineEmits(['update:modelValue', 'edit'])
 
 const showPassword = ref(false)
 const copyToast = ref('')
+
+const showEmailField = computed(() => ['account', 'email'].includes(props.item?.type))
+const showPasswordField = computed(() => ['account', 'email', 'password'].includes(props.item?.type))
+const showNotesField = computed(() => ['account', 'password'].includes(props.item?.type))
 
 const secretData = computed(() => {
   if (!props.item?.content) return { email: '', password: '', notes: '' }

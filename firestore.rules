@@ -26,11 +26,10 @@ service cloud.firestore {
       allow create: if isAlvin() && request.resource.data.userId == request.auth.uid;
       
       // PUBLIC VIEW (Raw view)
-      // Allowed if public, matches type, AND is not a password
-      // Anyone can read these even without login
+      // Allowed if public, matches public types, AND is not a secret
       allow read: if resource.data.is_public == true && 
                     (resource.data.type == 'plain_text' || resource.data.type == 'code') &&
-                    resource.data.type != 'password';
+                    !(resource.data.type in ['password', 'account', 'email']);
     }
   }
 }

@@ -164,7 +164,7 @@ const item = ref<any>(null)
 const itemTitle = ref('')
 const itemContent = ref('')
 const isPublic = ref(false)
-const type = ref('plain_text')
+const type = ref<VaultItem['type']>('plain_text')
 const editMode = ref(false)
 const autoSaveEnabled = ref(true)
 const isSaving = ref(false)
@@ -231,8 +231,9 @@ onMounted(async () => {
   itemTitle.value = data.title
   isPublic.value = data.is_public
   type.value = data.type
+  const isSecret = ['account', 'email', 'password'].includes(data.type)
 
-  if (data.type === 'password') {
+  if (isSecret) {
     itemContent.value = getDecryptedPassword(data.content)
   } else {
     itemContent.value = data.content
@@ -277,11 +278,13 @@ const saveChanges = async () => {
   if (!item.value) return
   isSaving.value = true
   try {
+    const isSecret = ['account', 'email', 'password'].includes(type.value)
+    
     await updateItem(item.value.id, {
       title: itemTitle.value,
       content: itemContent.value,
       is_public: isPublic.value,
-      type: type.value === 'password' ? 'password' : (detectedLanguage.value === 'plaintext' ? 'plain_text' : 'code')
+      type: isSecret ? type.value : (detectedLanguage.value === 'plaintext' ? 'plain_text' : 'code')
     })
     lastSaved.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } catch (e) {

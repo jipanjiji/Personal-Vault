@@ -53,7 +53,7 @@
               </div>
             </div>
 
-            <div class="flex items-center gap-3 pt-2" v-if="form.type !== 'password'">
+            <div class="flex items-center gap-3 pt-2" v-if="!isSecretType">
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" v-model="form.is_public" class="sr-only peer">
                 <div class="w-11 h-6 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white text-white"></div>
@@ -64,8 +64,8 @@
 
           <!-- Right Column: Context/Secrets -->
           <div class="space-y-6">
-            <div v-if="form.type === 'password'" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div>
+            <div v-if="isSecretType" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div v-if="showEmailField">
                 <label class="block text-sm font-medium text-slate-300 mb-1">Email / Username</label>
                 <input 
                   v-model="form.email" 
@@ -74,7 +74,7 @@
                   placeholder="alvin@example.com"
                 />
               </div>
-              <div>
+              <div v-if="showPasswordField">
                 <label class="block text-sm font-medium text-slate-300 mb-1">Password</label>
                 <input 
                   v-model="form.secretPassword" 
@@ -85,16 +85,16 @@
               </div>
             </div>
 
-            <div>
+            <div v-if="showNotesField || !isSecretType">
               <label class="block text-sm font-medium text-slate-300 mb-1">
-                {{ form.type === 'password' ? 'Notes' : 'Content' }}
+                {{ isSecretType ? 'Notes' : 'Content' }}
               </label>
               <textarea 
                 v-model="form.content" 
-                :required="form.type !== 'password'"
-                :rows="form.type === 'password' ? 6 : 10"
+                :required="!isSecretType"
+                :rows="isSecretType ? 6 : 10"
                 class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono text-sm resize-none custom-scrollbar"
-                :placeholder="form.type === 'password' ? 'Additional notes about this account...' : 'Paste your content here...'"
+                :placeholder="isSecretType ? 'Additional notes about this account...' : 'Paste your content here...'"
               ></textarea>
             </div>
           </div>
@@ -129,9 +129,12 @@ import {
   SaveIcon, 
   FileTextIcon, 
   CodeIcon, 
-  ShieldAlertIcon 
+  ShieldAlertIcon,
+  UserIcon,
+  MailIcon,
+  LockIcon
 } from 'lucide-vue-next'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -144,6 +147,24 @@ const emit = defineEmits(['update:modelValue', 'save'])
 
 const typeOptions = [
   { 
+    label: 'Account', 
+    value: 'account', 
+    icon: UserIcon,
+    description: 'Email, Password, and Notes'
+  },
+  { 
+    label: 'Email', 
+    value: 'email', 
+    icon: MailIcon,
+    description: 'Email and Password'
+  },
+  { 
+    label: 'Passwords', 
+    value: 'password', 
+    icon: LockIcon,
+    description: 'Password and Notes'
+  },
+  { 
     label: 'Plain Text', 
     value: 'plain_text', 
     icon: FileTextIcon,
@@ -154,14 +175,14 @@ const typeOptions = [
     value: 'code', 
     icon: CodeIcon,
     description: 'Syntax-highlighted code'
-  },
-  { 
-    label: 'Secret / Password', 
-    value: 'password', 
-    icon: ShieldAlertIcon,
-    description: 'Hardware-encrypted vault'
   }
 ]
+
+// Helpers for type checks
+const isSecretType = computed(() => ['account', 'email', 'password'].includes(form.value.type))
+const showEmailField = computed(() => ['account', 'email'].includes(form.value.type))
+const showPasswordField = computed(() => ['account', 'email', 'password'].includes(form.value.type))
+const showNotesField = computed(() => ['account', 'password'].includes(form.value.type))
 
 const form = ref({
   title: '',
@@ -176,7 +197,7 @@ const form = ref({
 watch(() => props.modelValue, (val) => {
   if (val && props.initialData) {
     const data = { ...props.initialData }
-    if (data.type === 'password') {
+    if (['account', 'email', 'password'].includes(data.type)) {
       try {
         const secret = JSON.parse(data.content)
         form.value = {
@@ -217,13 +238,13 @@ watch(() => props.modelValue, (val) => {
 const handleSubmit = () => {
   const submitData = { ...form.value }
   
-  if (submitData.type === 'password') {
+  if (isSecretType.value) {
     submitData.is_public = false
     // Pack into JSON string
     submitData.content = JSON.stringify({
-      email: submitData.email,
-      password: submitData.secretPassword,
-      notes: submitData.content
+      email: showEmailField.value ? submitData.email : undefined,
+      password: showPasswordField.value ? submitData.secretPassword : undefined,
+      notes: showNotesField.value ? submitData.content : undefined
     })
   }
 

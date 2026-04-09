@@ -159,9 +159,11 @@ const toast = ref('')
 
 const filterTypes = [
   { label: 'All Items', value: 'all' },
+  { label: 'Account', value: 'account' },
+  { label: 'Email', value: 'email' },
+  { label: 'Passwords', value: 'password' },
   { label: 'Text', value: 'plain_text' },
-  { label: 'Code', value: 'code' },
-  { label: 'Passwords', value: 'password' }
+  { label: 'Code', value: 'code' }
 ]
 
 const filteredItems = computed(() => {
@@ -173,11 +175,13 @@ const filteredItems = computed(() => {
   })
 })
 
+const isSecretType = (type: string) => ['account', 'email', 'password'].includes(type)
+
 const handleEdit = (item: any) => {
   const type = (item.type || '').toLowerCase().trim()
-  const isPassword = type === 'password' || type === 'secret' || type.includes('pass') || type.includes('credential')
+  const isSecret = isSecretType(type)
   
-  if (isPassword && item.content?.startsWith('U2FsdGVkX1')) {
+  if (isSecret && item.content?.startsWith('U2FsdGVkX1')) {
     const decryptedContent = getDecryptedPassword(item.content)
     selectedItem.value = { ...item, content: decryptedContent }
   } else {
@@ -195,9 +199,9 @@ const handleEditFromViewer = (item: any) => {
 
 const handleView = (item: any) => {
   const type = (item.type || '').toLowerCase().trim()
-  const isPassword = type === 'password' || type === 'secret' || type.includes('pass') || type.includes('credential')
+  const isSecret = isSecretType(type)
   
-  if (isPassword) {
+  if (isSecret) {
     const decryptedContent = item.content?.startsWith('U2FsdGVkX1') 
       ? getDecryptedPassword(item.content) 
       : item.content
@@ -258,7 +262,7 @@ const handleCopyPassword = (item: any) => {
   const decrypted = getDecryptedPassword(item.content)
   let textToCopy = decrypted
   
-  if (item.type === 'password') {
+  if (isSecretType(item.type)) {
     try {
       const secret = JSON.parse(decrypted)
       textToCopy = secret.password || decrypted
